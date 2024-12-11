@@ -97,7 +97,7 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container">
-                <a class="navbar-brand" href="#"><img src="{% static 'img/logo.svg' %}" alt=""></a>
+                <a class="navbar-brand" href="/"><img src="{% static 'img/logo.svg' %}" alt=""></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                     aria-expanded="false" aria-label="Toggle navigation">
@@ -106,23 +106,20 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav mx-auto">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="#">Вкладка</a>
+                            <a class="nav-link" aria-current="page" href="/">Главная</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Вкладка</a>
+                            <a class="nav-link active" href="/user/login/">Вход</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Вкладка</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Вкладка</a>
+                            <a class="nav-link" href="/user/register/">Регистрация</a>
                         </li>
                     </ul>
                     <div class="d-flex">
                         <a class="nav-link-icon" href="#">
                             <img src="{% static 'img/search.svg' %}" alt="">
                         </a>
-                        <a class="nav-link-icon" href="#">
+                        <a class="nav-link-icon" href="/user/account/">
                             <img src="{% static 'img/profile.svg' %}" alt="">
                         </a>
                     </div>
@@ -132,20 +129,15 @@
     </header>
     <h1 class="text-center mt-5">Авторизация</h1>
     <div class="d-flex flex-column justify-content-center align-items-center">
-        {% if error %}
-        <div class="alert alert-danger w-100" role="alert" style="max-width: 600px;">
-            {{ error }}
-        </div>
-        {% endif %}
         {% if messages %}
-        <div class="alert alert-success w-100" role="alert" style="max-width: 600px;">
-            {% for message in messages %}
-            <div{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %} alert-{{ message.tags }} {% else %} alert-danger {% endif %} w-100" role="alert" style="max-width: 600px;">
+                <div{% if message.tags %} class="{{ message.tags }}" {% endif %}>
+                    {{ message }}
+                </div>
         </div>
         {% endfor %}
-    </div>
-    {% endif %}
-
+        {% endif %}
     <form class="form w-100" method="post">
         {% csrf_token %}
 

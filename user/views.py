@@ -52,13 +52,15 @@ def login_view(request):
             login(request, user)
             return redirect('account')
         else:
-            return render(request, 'user/login.html', {'error': "Неверное имя пользователя или пароль!"})
+            messages.error(request, "Неверное имя пользователя или пароль!")
+            return redirect('login')
     return render(request, 'user/login.html')
 
 
 def account_view(request):
     if request.user.is_authenticated:
         return render(request, 'user/account.html')
+    messages.error(request, "Авторизуйтесь!")
     return redirect('login')
 
 
