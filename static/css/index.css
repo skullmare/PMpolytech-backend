@@ -1,0 +1,30 @@
+html {
+    height: 100vh;
+    background-image: url('../img/pm.png'); /* Замените на фактическое имя вашего файла */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: top;
+    
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+.notification {
+    background-color: rgba(0, 0, 0, 0.789); /* Полупрозрачный черный фон */
+    color: white;
+    padding: 20px; /* Отступ для мобильных устройств */
+    text-align: center;
+    max-width: 600px; /* Максимальная ширина плашки */
+}
+
+/* Медиа-запрос для экранов ПК */
+@media (min-width: 768px) {
+    .notification {
+        padding: 50px; /* Отступ для ПК */
+    }
+}
