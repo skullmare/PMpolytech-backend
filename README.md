@@ -4,7 +4,15 @@
 
 Создай виртуальное окружение с помощью python -m venv venv. Это позволит изолировать зависимости проекта. Активируй виртуальное окружение: на Windows используй venv\Scripts\activate, а на macOS/Linux — source venv/bin/activate.
 
-Установи зависимости, используя файл requirements.txt, с помощью команды pip install -r requirements.txt. Если в проекте используется база данных, проверь файл settings.py и настрой параметры подключения. Создай базу данных, если это необходимо.
+Установи зависимости, используя файл requirements.txt, с помощью команды pip install -r requirements.txt. 
+
+Создай файл .env и поместите в него:
+
+SECRET_KEY=''
+EMAIL_HOST_USER=''
+EMAIL_HOST_PASSWORD=''
+
+*поля должны быть заполнены
 
 Теперь выполни миграции для настройки базы данных командой python manage.py migrate. Если нужно, создай суперпользователя с помощью команды python manage.py createsuperuser.
 
