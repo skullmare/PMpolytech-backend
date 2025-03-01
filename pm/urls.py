@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from user.views import register_view, login_view, account_view, activate
 from main.views import index
+from pr.views import projects, project
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -27,5 +28,7 @@ urlpatterns = [
     path('user/account/', account_view, name='account'),
     path('user/logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('activate/<uidb64>/<token>/', activate, name='activate'),
+    path('projects/', projects, name='projects'),
+    path('project/<uuid:id>/', project, name='project'),
     path('', index, name='index'),
 ]

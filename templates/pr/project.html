@@ -1,0 +1,193 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <!-- Обязательные метатеги -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project.css' %}">
+    <title>{{project.name}}</title>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/"><img src="{% static 'img/logo.svg' %}" alt=""></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="/">Главная</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/user/login/">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/user/register/">Регистрация</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/projects/">Проекты</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex">
+                        <a class="nav-link-icon" href="#">
+                            <img src="{% static 'img/search.svg' %}" alt="">
+                        </a>
+                        <a class="nav-link-icon" href="/user/account/">
+                            <img src="{% static 'img/profile.svg' %}" alt="">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container mt-5">
+        <h1 class="mb-4">{{ project.name }}</h1>
+    
+        <div class="row">
+            <!-- Левая колонка (3/4 ширины) -->
+            <div class="col-md-9">
+                <!-- Основная информация о проекте -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        Основная информация
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Клиент:</strong> {{ project.client|default:"Не указано" }}</p>
+                        <p><strong>Куратор:</strong> {{ project.curator|default:"Не указано" }}</p>
+                        <p><strong>Цель проекта:</strong> {{ project.purpose|default:"Не указано" }}</p>
+                        <p><strong>Описание проекта:</strong> {{ project.description|default:"Не указано" }}</p>
+                        <p><strong>Дата начала:</strong> {{ project.start_date|default:"Не указано" }}</p>
+                        <p><strong>Дата окончания:</strong> {{ project.end_date|default:"Не указано" }}</p>
+                        <p><strong>Тип проекта:</strong> {{ project.get_project_type_display }}</p>
+                        <p><strong>Общий бюджет:</strong> {{ project.get_budget_sum }} руб.</p>
+                    </div>
+                </div>
+    
+                <!-- Задачи проекта -->
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        Задачи проекта
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for task in project.tasks.all %}
+                            <li class="list-group-item">
+                                <strong>{{ task.name }}:</strong> {{ task.description }}
+                                <p><strong>Статус:</strong> {{ task.get_status_display }}</p>
+                                <p><strong>Дата начала:</strong> {{ task.start_date }}</p>
+                                <p><strong>Дата окончания:</strong> {{ task.end_date }}</p>
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item">Задачи не добавлены</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+    
+                <!-- Результаты проекта -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        Результаты проекта
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for result in project.results.all %}
+                            <li class="list-group-item">
+                                {{ result.text }}
+                                {% if result.file %}
+                                <a href="{{ result.file.url }}" class="btn btn-primary btn-sm file-link">Скачать файл</a>
+                                {% endif %}
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item">Результаты не добавлены</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+    
+                <!-- Риски проекта -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        Риски проекта
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for risk in project.risks.all %}
+                            <li class="list-group-item">
+                                <strong>{{ risk.name }}:</strong> {{ risk.description }}
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item">Риски не добавлены</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Правая колонка (1/4 ширины) -->
+            <div class="col-md-3">
+                <!-- Участники проекта -->
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        Участники проекта
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for membership in project.projectmembership_set.all %}
+                            <li class="list-group-item">
+                                {{ membership.user.username }} - {{ membership.get_role_display }}
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item">Участники не добавлены</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-auto">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap">
+            <div class="p-2">
+                &copy; Центр проектной деятельности <br> Московского политехнического университета
+                <br>
+                <a href="mailto:cpd@mospolytech.ru" class="text-white">cpd@mospolytech.ru</a>
+            </div>
+            <div class="p-2">
+                <a href="https://www.facebook.com" target="_blank" class="me-3">
+                    <img src="{% static 'img/vk.svg' %}" alt="Facebook" width="24" class="social-icon">
+                </a>
+                <a href="https://www.twitter.com" target="_blank">
+                    <img src="{% static 'img/telegram.svg' %}" alt="Twitter" width="24" class="social-icon">
+                </a>
+            </div>
+        </div>
+    </footer>
+    <!-- Необязательный JavaScript; выберите один из двух! -->
+
+    <!-- Вариант 1: пакет Bootstrap с Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
+        crossorigin="anonymous"></script>
+
+    <!-- Вариант 2: отдельные JS для Popper и Bootstrap -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.min.js" integrity="sha384-Atwg2Pkwv9vp0ygtn1JAojH0nYbwNJLPhwyoVbhoPwBhjQPR5VtM2+xf0Uwh9KtT" crossorigin="anonymous"></script>
+    -->
+</body>
+
+</html>

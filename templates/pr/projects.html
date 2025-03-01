@@ -1,0 +1,287 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <!-- Обязательные метатеги -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+    <title>Список проектов</title>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/"><img src="{% static 'img/logo.svg' %}" alt=""></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="/">Главная</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/user/login/">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/user/register/">Регистрация</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/projects/">Проекты</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex">
+                        <a class="nav-link-icon" href="#">
+                            <img src="{% static 'img/search.svg' %}" alt="">
+                        </a>
+                        <a class="nav-link-icon" href="/user/account/">
+                            <img src="{% static 'img/profile.svg' %}" alt="">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-sm-12">
+                <div class="mx-auto mt-2 alert {% if message.tags == 'success' %} alert-{{ message.tags }} {% else %} alert-danger {% endif %}"
+                role="alert">
+                    <div{% if message.tags %} class="{{ message.tags }}" {% endif %}>
+                        {{ message }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endfor %}
+        {% endif %}
+
+
+    <div class="container mt-3">
+        <h1 class="mb-4 text-center">Проекты</h1>
+        <div class="container my-3">
+            <div class="row g-3 justify-content-center align-items-center">
+                <div class="col-md-5">
+                    <form method="get">
+                        <div class="input-group">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Введите название проекта">
+                            <button type="submit" class="btn btn-outline-secondary">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                </div>
+                
+                <div class="col-md-3">
+                    <form method="get" id="sortForm">
+                        <!-- Скрытые поля для сохранения текущих параметров -->
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                        <input type="hidden" name="start_date" value="{{ start_date }}">
+                        <input type="hidden" name="end_date" value="{{ end_date }}">
+                        <input type="hidden" name="project_type" value="{{ project_type }}">
+                        <input type="hidden" name="page" value="{{ projects.number }}">
+                    
+                        <!-- Выпадающий список для сортировки -->
+                        <select class="form-select" id="sort" name="sort" onchange="this.form.submit()">
+                            <option value="">Без сортировки</option>
+                            <option value="start_date_asc" {% if sort == 'start_date_asc' %}selected{% endif %}>Дата начала (по возрастанию)</option>
+                            <option value="start_date_desc" {% if sort == 'start_date_desc' %}selected{% endif %}>Дата начала (по убыванию)</option>
+                            <option value="end_date_asc" {% if sort == 'end_date_asc' %}selected{% endif %}>Дата окончания (по возрастанию)</option>
+                            <option value="end_date_desc" {% if sort == 'end_date_desc' %}selected{% endif %}>Дата окончания (по убыванию)</option>
+                            <option value="curator" {% if sort == 'curator' %}selected{% endif %}>Сортировка по куратору</option>
+                            <option value="budget_asc" {% if sort == 'budget_asc' %}selected{% endif %}>Бюджет (по возрастанию)</option>
+                            <option value="budget_desc" {% if sort == 'budget_desc' %}selected{% endif %}>Бюджет (по убыванию)</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+  
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Фильтры</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <!-- Форма поиска -->
+                <form method="get">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="start_date">Дата начала:</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="end_date">Дата окончания:</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="project_type">Тип проекта:</label>
+                            <select class="form-select" id="project_type" name="project_type">
+                                <option value="">Все типы</option>
+                                {% for value, label in PROJECT_TYPE_CHOICES %}
+                                <option value="{{ value }}" {% if project_type == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6 col-sm-12"><a href="{% url 'projects' %}" class="btn btn-secondary w-100 mt-2">Сбросить фильтры</a></div>
+                        <div class="col-lg-6 col-sm-12"><button type="submit" class="btn btn-primary w-100 mt-2">Применить фильтры</button></div>
+                    </div>
+                </form>
+                </div>
+            </div>
+            </div>
+        </div>
+
+
+
+        <!-- Список проектов в виде карточек -->
+         <div class="container">
+            <div class="row">
+                {% for project in projects %}
+                <div class="col-md-6 col-lg-4 d-flex mb-4">
+                    <a class="w-100" href="{% url 'project' project.id %}">
+                        <div class="project-card card h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title text-center">
+                                    {{ project.name }}
+                                </h5>
+                                <p class="card-text">
+                                    <strong>Куратор:</strong> {{ project.curator|default:"Не указано" }}
+                                </p>
+                                <p class="card-text">
+                                    <strong>Дата начала:</strong> {{ project.start_date|default:"Не указано" }}
+                                </p>
+                                <p class="card-text">
+                                    <strong>Дата окончания:</strong> {{ project.end_date|default:"Не указано" }}
+                                </p>
+                                <p class="card-text">
+                                    <strong>Тип проекта:</strong> {{ project.get_project_type_display }}
+                                </p>
+                                <p class="card-text">
+                                    <strong>Бюджет:</strong> {{ project.get_budget_sum }} руб.
+                                </p>
+                                <p class="card-text text-center text-decoration-underline">
+                                    Подробнее
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% empty %}
+    
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-4 col-sm-12">
+                    <div class="alert alert-danger text-center" role="alert">
+                        Нет доступных проектов.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+         </div>
+
+    </div>
+
+
+    </div>
+    <!-- Пагинация -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if projects.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if project_type %}&project_type={{ project_type }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+                    aria-label="First">
+                    <span style="color: gray;" aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ projects.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if project_type %}&project_type={{ project_type }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+                    aria-label="Previous">
+                    <span style="color: gray;" aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+    
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Страница {{ projects.number }} из {{ projects.paginator.num_pages }}
+                </span>
+            </li>
+    
+            {% if projects.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ projects.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if project_type %}&project_type={{ project_type }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+                    aria-label="Next">
+                    <span style="color: gray;" aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ projects.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if project_type %}&project_type={{ project_type }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+                    aria-label="Last">
+                    <span style="color: gray;" aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    <footer class="footer mt-auto">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap">
+            <div class="p-2">
+                &copy; Центр проектной деятельности <br> Московского политехнического университета
+                <br>
+                <a href="mailto:cpd@mospolytech.ru" class="text-white">cpd@mospolytech.ru</a>
+            </div>
+            <div class="p-2">
+                <a href="https://www.facebook.com" target="_blank" class="me-3">
+                    <img src="{% static 'img/vk.svg' %}" alt="Facebook" width="24" class="social-icon">
+                </a>
+                <a href="https://www.twitter.com" target="_blank">
+                    <img src="{% static 'img/telegram.svg' %}" alt="Twitter" width="24" class="social-icon">
+                </a>
+            </div>
+        </div>
+    </footer>
+    <!-- Необязательный JavaScript; выберите один из двух! -->
+
+    <!-- Вариант 1: пакет Bootstrap с Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
+        crossorigin="anonymous"></script>
+
+    <!-- Вариант 2: отдельные JS для Popper и Bootstrap -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.min.js" integrity="sha384-Atwg2Pkwv9vp0ygtn1JAojH0nYbwNJLPhwyoVbhoPwBhjQPR5VtM2+xf0Uwh9KtT" crossorigin="anonymous"></script>
+    -->
+</body>
+
+</html>
