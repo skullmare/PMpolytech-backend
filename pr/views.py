@@ -107,3 +107,22 @@ def project(request, id):
         return render(request, 'pr/project.html', {'project': project})
     messages.error(request, "Авторизуйтесь!")
     return redirect('login')
+
+
+def create_project(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        project_type = request.POST.get('project_type')
+        
+        if not request.user.is_staff:
+            messages.error(request, "У вас нет прав для создания проекта!")
+            return redirect('projects')
+        
+        if name and project_type:
+            Project.objects.create(name=name, project_type=project_type)
+            messages.success(request, "Проект успешно создан!")
+            return redirect('projects')
+        else:
+            messages.error(request, "Заполните все поля!")
+    
+    return redirect('projects')

@@ -6,7 +6,7 @@
     <!-- Обязательные метатеги -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
@@ -38,6 +38,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/projects/">Проекты</a>
                         </li>
+                        
                     </ul>
                     <div class="d-flex">
                         <a class="nav-link-icon" href="#">
@@ -51,13 +52,118 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <h1>Добро пожаловать, {{ user.username }}!</h1>
-        {% if user.is_staff %}
-            <a href="{% url 'admin:index' %}">Панель администратора</a>
-        {% endif %}
-        <a href="{% url 'logout' %}">Выйти</a>
+    <h1 class="my-4 text-center">Личный кабинет</h1>
+    <div class="container" style="max-width: 700px;">
+        <div class="card shadow-lg p-4">
+            <div class="row g-4 align-items-center">
+                <!-- Колонка с аватаром и именем -->
+                <div class="col-md-6 text-center">
+                    {% if profile.photo %}
+                    <img src="{{ profile.photo.url }}" alt="Фото пользователя" class="rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                    <img src="{% static 'img/avatar.jpg' %}" alt="Фото пользователя" class="rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% endif %}
+                    <h3>{{ user.last_name }} {{ user.first_name }}</h3>
+                </div>
+                
+                <!-- Колонка с информацией -->
+                <div class="col-md-6">
+                    <div class="d-flex flex-column h-100 justify-content-between">
+                        <div class="mb-2">
+                            <p class="mb-1"><strong>Логин:</strong> {{ user.username }}</p>
+                        </div>
+                        <div class="mb-2">
+                            <p class="mb-1"><strong>E-mail:</strong> {{ user.email }}</p>
+                        </div>
+                        <div class="mb-2">
+                            <p class="mb-1"><strong>Должность:</strong> {{ profile.get_role_display }}</p>
+                        </div>
+                        {% if profile.role == 'student' and profile.student_group %}
+                        <div class="mb-2">
+                            <p class="mb-1"><strong>Группа:</strong> {{ profile.student_group.code}}</p>
+                        </div>
+                        {% endif %}
+                        {% if profile.role == 'teacher' and profile.teacher_direction %}
+                        <div class="mb-2">
+                            <p class="mb-1"><strong>Направление подготовки:</strong> {{ profile.teacher_direction.name }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+    
+            <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="btn btn-primary">Панель администратора</a>
+                {% endif %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    Редактировать
+                </button>
+                <a href="{% url 'logout' %}" class="btn btn-danger">Выйти</a>
+            </div>
+            
+        </div>
     </div>
+
+    <!-- Модальное окно редактирования профиля -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">Редактирование профиля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data" action="{% url 'update_profile' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="photo" class="form-label">Фото</label>
+                        <input class="form-control" type="file" id="photo" name="photo">
+                    </div>
+                    <div class="mb-3">
+                        <label for="last_name" class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="first_name" class="form-label">Имя</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+                    </div>
+                    {% if profile.role == 'student' %}
+                    <div class="mb-3">
+                        <label for="student_group" class="form-label">Группа</label>
+                        <select class="form-select" id="student_group" name="student_group">
+                            <option value="">-- Выберите группу --</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" {% if profile.student_group.id == group.id %}selected{% endif %}>{{ group.code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    {% if profile.role == 'teacher' %}
+                    <div class="mb-3">
+                        <label for="teacher_direction" class="form-label">Направление подготовки</label>
+                        <select class="form-select" id="teacher_direction" name="teacher_direction">
+                            <option value="">-- Выберите направление --</option>
+                            {% for direction in directions %}
+                            <option value="{{ direction.id }}" {% if profile.teacher_direction.id == direction.id %}selected{% endif %}>{{ direction.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <footer class="footer mt-auto">
         <div class="container d-flex justify-content-between align-items-center flex-wrap">
             <div class="p-2">
