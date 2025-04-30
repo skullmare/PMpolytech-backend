@@ -1,20 +1,16 @@
 {% load static %}
 <!doctype html>
 <html lang="ru">
-
 <head>
-    <!-- Обязательные метатеги -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/project.css' %}">
-    <title>{{project.name}}</title>
+    <title>{{ project.name }}</title>
 </head>
-
 <body class="d-flex flex-column min-vh-100">
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark">
@@ -52,113 +48,757 @@
             </div>
         </nav>
     </header>
-    <div class="container mt-5">
-        <h1 class="mb-4">{{ project.name }}</h1>
     
+    <div class="container py-4">
         <div class="row">
-            <!-- Левая колонка (3/4 ширины) -->
-            <div class="col-md-9">
-                <!-- Основная информация о проекте -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        Основная информация
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Клиент:</strong> {{ project.client|default:"Не указано" }}</p>
-                        <p><strong>Куратор:</strong> {{ project.curator|default:"Не указано" }}</p>
-                        <p><strong>Цель проекта:</strong> {{ project.purpose|default:"Не указано" }}</p>
-                        <p><strong>Описание проекта:</strong> {{ project.description|default:"Не указано" }}</p>
-                        <p><strong>Дата начала:</strong> {{ project.start_date|default:"Не указано" }}</p>
-                        <p><strong>Дата окончания:</strong> {{ project.end_date|default:"Не указано" }}</p>
-                        <p><strong>Тип проекта:</strong> {{ project.get_project_type_display }}</p>
-                        <p><strong>Общий бюджет:</strong> {{ project.get_budget_sum }} руб.</p>
-                    </div>
+            {% if messages %}
+            <div class="container">
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/" class="text-decoration-none text-secondary">Главная</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/projects/" class="text-decoration-none text-secondary">Проекты</a>
+                    </li>
+                    <li class="breadcrumb-item active text-truncate"  style="max-width: 180px;" aria-current="page">
+                        {{ project.name }}
+                        
+                    </li>
+                    {% if is_leader %}
+                        <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editProjectNameModal">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        {% endif %}
+                </ol>
+            </nav>
+            <div class="page-header-title">
+                <h2>{{ project.name }} 
+                    {% if is_leader %}
+                    <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editProjectNameModal">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    {% endif %}
+                </h2>
+            </div>
+        </div>
+
+        
+        <div class="row g-4">
+            <!-- Основная информация (75% ширины) -->
+            <div class="col-lg-9">
+                <div class="row g-4">
+                    <!-- Блок основной информации -->
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="bi bi-info-circle"></i> Основная информация</h5>
+                                    {% if is_leader %}
+                                    <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editBasicInfoModal">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Клиент</div>
+                                            {{ project.client|default:"Не указано" }}
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Куратор</div>
+                                            {{ project.curator|default:"Не указано" }}
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Цель проекта</div>
+                                            {{ project.purpose|default:"Не указано" }}
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
     
-                <!-- Задачи проекта -->
-                <div class="card mb-4">
-                    <div class="card-header bg-danger text-white">
-                        Задачи проекта
+                    <!-- Блок сроков и бюджета -->
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="bi bi-calendar-check"></i> Сроки и бюджет</h5>
+                                    {% if is_leader %}
+                                    <div>
+                                        <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editDatesBudgetModal">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Дата начала</div>
+                                            {{ project.start_date|default:"Не указано" }}
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Дата окончания</div>
+                                            {{ project.end_date|default:"Не указано" }}
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Тип проекта</div>
+                                            {{ project.get_project_type_display }}
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Общий бюджет</div>
+                                            {{ project.get_budget_sum }} руб.
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Бюджет по годам</div>
+                                            {% for budget in project.budgets.all %}
+                                                {{ budget.year }}: {{ budget.amount }} руб.<br>
+                                            {% empty %}
+                                                Бюджет не добавлен
+                                            {% endfor %}
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-group">
-                            {% for task in project.tasks.all %}
-                            <li class="list-group-item">
-                                <strong>{{ task.name }}:</strong> {{ task.description }}
-                                <p><strong>Статус:</strong> {{ task.get_status_display }}</p>
-                                <p><strong>Дата начала:</strong> {{ task.start_date }}</p>
-                                <p><strong>Дата окончания:</strong> {{ task.end_date }}</p>
-                            </li>
-                            {% empty %}
-                            <li class="list-group-item">Задачи не добавлены</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
     
-                <!-- Результаты проекта -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        Результаты проекта
+                    <!-- Описание проекта -->
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="bi bi-card-text"></i> Описание проекта</h5>
+                                    {% if is_leader %}
+                                    <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editDescriptionModal">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <p>{{ project.description|default:"Описание проекта не добавлено" }}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-group">
-                            {% for result in project.results.all %}
-                            <li class="list-group-item">
-                                {{ result.text }}
-                                {% if result.file %}
-                                <a href="{{ result.file.url }}" class="btn btn-primary btn-sm file-link">Скачать файл</a>
-                                {% endif %}
-                            </li>
-                            {% empty %}
-                            <li class="list-group-item">Результаты не добавлены</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
     
-                <!-- Риски проекта -->
-                <div class="card mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        Риски проекта
+                    <!-- Задачи проекта -->
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="bi bi-list-task"></i> Задачи</h5>
+                                    {% if is_leader %}
+                                    <div>
+                                        <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="list-group">
+                                    {% for task in project.tasks.all %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ task.name }}</strong>
+                                            {% if is_leader %}
+                                            <button class="btn btn-sm p-0" data-bs-toggle="modal" data-bs-target="#editTaskModal{{ task.id }}">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        <small class="d-block text-muted">Статус: {{ task.get_status_display }}</small>
+                                        <small class="d-block">Срок: {{ task.end_date }}</small>
+                                    </div>
+                                    {% empty %}
+                                    <div class="list-group-item">Задачи не добавлены</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-group">
-                            {% for risk in project.risks.all %}
-                            <li class="list-group-item">
-                                <strong>{{ risk.name }}:</strong> {{ risk.description }}
-                            </li>
-                            {% empty %}
-                            <li class="list-group-item">Риски не добавлены</li>
-                            {% endfor %}
-                        </ul>
+    
+                    <!-- Результаты проекта -->
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="bi bi-check-circle"></i> Результаты</h5>
+                                    {% if is_leader %}
+                                    <div>
+                                        <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#addResultModal">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="list-group">
+                                    {% for result in project.results.all %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ result.text }}</span>
+                                            {% if is_leader %}
+                                            <button class="btn btn-sm p-0" data-bs-toggle="modal" data-bs-target="#editResultModal{{ result.id }}">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        {% if result.file %}
+                                        <a href="{{ result.file.url }}" class="btn btn-sm mt-1 p-0">
+                                            <i class="bi bi-download"></i> Скачать файл
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% empty %}
+                                    <div class="list-group-item">Результаты не добавлены</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Риски проекта -->
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Риски</h5>
+                                    {% if is_leader %}
+                                    <div>
+                                        <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#addRiskModal">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="list-group">
+                                    {% for risk in project.risks.all %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ risk.name }}</strong>
+                                            {% if is_leader %}
+                                            <button class="btn btn-sm p-0" data-bs-toggle="modal" data-bs-target="#editRiskModal{{ risk.id }}">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-muted">{{ risk.description }}</div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="list-group-item">Риски не добавлены</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
     
-            <!-- Правая колонка (1/4 ширины) -->
-            <div class="col-md-3">
-                <!-- Участники проекта -->
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        Участники проекта
-                    </div>
+            <!-- Участники проекта (25% ширины) -->
+            <div class="col-lg-3">
+                <div class="card shadow-sm sticky-top" style="top: 15px;">
                     <div class="card-body">
-                        <ul class="list-group">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title"><i class="bi bi-people-fill"></i> Участники проекта</h5>
+                            {% if is_leader %}
+                            <div>
+                                <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="list-group">
                             {% for membership in project.projectmembership_set.all %}
-                            <li class="list-group-item">
-                                {{ membership.user.username }} - {{ membership.get_role_display }}
-                            </li>
+                            <div class="list-group-item d-flex align-items-center">
+                                <div class="me-3">
+                                    {% with initials=membership.user.username|slice:":2"|upper %}
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">{{ initials }}</div>
+                                    {% endwith %}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ membership.user.get_full_name|default:membership.user.username }}</div>
+                                    <small class="text-muted">{{ membership.get_role_display }}</small>
+                                </div>
+                            </div>
                             {% empty %}
-                            <li class="list-group-item">Участники не добавлены</li>
+                            <div class="list-group-item">Участники не добавлены</div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
+    <!-- Модальные окна для редактирования (доступны только руководителю) -->
+    {% if is_leader %}
+    <!-- Модальное окно для редактирования названия проекта -->
+    <div class="modal fade" id="editProjectNameModal" tabindex="-1" aria-labelledby="editProjectNameModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_name' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editProjectNameModalLabel">Редактировать название проекта</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="projectName" class="form-label">Название проекта</label>
+                            <input type="text" class="form-control" id="projectName" name="name" value="{{ project.name }}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для редактирования основной информации -->
+    <div class="modal fade" id="editBasicInfoModal" tabindex="-1" aria-labelledby="editBasicInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_basic_info' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editBasicInfoModalLabel">Редактировать основную информацию</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="client" class="form-label">Клиент</label>
+                            <input type="text" class="form-control" id="client" name="client" value="{{ project.client }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="curator" class="form-label">Куратор</label>
+                            <input type="text" class="form-control" id="curator" name="curator" value="{{ project.curator }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purpose" class="form-label">Цель проекта</label>
+                            <textarea class="form-control" id="purpose" name="purpose" rows="3">{{ project.purpose }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для редактирования сроков и типа проекта -->
+    <div class="modal fade" id="editDatesBudgetModal" tabindex="-1" aria-labelledby="editDatesBudgetModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_dates_budget' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editDatesBudgetModalLabel">Редактировать сроки и тип проекта</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Дата начала</label>
+                            <input type="date" class="form-control" id="startDate" name="start_date" value="{{ project.start_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Дата окончания</label>
+                            <input type="date" class="form-control" id="endDate" name="end_date" value="{{ project.end_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="projectType" class="form-label">Тип проекта</label>
+                            <select class="form-select" id="projectType" name="project_type">
+                                {% for value, display in project.PROJECT_TYPE_CHOICES %}
+                                <option value="{{ value }}" {% if project.project_type == value %}selected{% endif %}>{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для редактирования описания -->
+    <div class="modal fade" id="editDescriptionModal" tabindex="-1" aria-labelledby="editDescriptionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_description' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editDescriptionModalLabel">Редактировать описание проекта</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="5">{{ project.description }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для добавления задачи -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'add_project_task' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addTaskModalLabel">Добавить задачу</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="taskName" class="form-label">Название задачи</label>
+                            <input type="text" class="form-control" id="taskName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDescription" class="form-label">Описание</label>
+                            <textarea class="form-control" id="taskDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskStatus" class="form-label">Статус</label>
+                            <select class="form-select" id="taskStatus" name="status">
+                                {% for value, display in task_status_choices %}
+                                <option value="{{ value }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskStartDate" class="form-label">Дата начала</label>
+                            <input type="date" class="form-control" id="taskStartDate" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskEndDate" class="form-label">Срок выполнения</label>
+                            <input type="date" class="form-control" id="taskEndDate" name="end_date" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальные окна для редактирования задач -->
+    {% for task in project.tasks.all %}
+    <div class="modal fade" id="editTaskModal{{ task.id }}" tabindex="-1" aria-labelledby="editTaskModalLabel{{ task.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_task' task.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editTaskModalLabel{{ task.id }}">Редактировать задачу</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="taskName{{ task.id }}" class="form-label">Название задачи</label>
+                            <input type="text" class="form-control" id="taskName{{ task.id }}" name="name" value="{{ task.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDescription{{ task.id }}" class="form-label">Описание</label>
+                            <textarea class="form-control" id="taskDescription{{ task.id }}" name="description" rows="3">{{ task.description }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskStatus{{ task.id }}" class="form-label">Статус</label>
+                            <select class="form-select" id="taskStatus{{ task.id }}" name="status">
+                                {% for value, display in task_status_choices %}
+                                <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskStartDate{{ task.id }}" class="form-label">Дата начала</label>
+                            <input type="date" class="form-control" id="taskStartDate{{ task.id }}" name="start_date" value="{{ task.start_date|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskEndDate{{ task.id }}" class="form-label">Срок выполнения</label>
+                            <input type="date" class="form-control" id="taskEndDate{{ task.id }}" name="end_date" value="{{ task.end_date|date:'Y-m-d' }}" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a href="{% url 'delete_project_task' task.id %}" class="btn btn-danger">Удалить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Модальное окно для добавления результата -->
+    <div class="modal fade" id="addResultModal" tabindex="-1" aria-labelledby="addResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'add_project_result' project.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addResultModalLabel">Добавить результат</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="resultText" class="form-label">Описание результата</label>
+                            <textarea class="form-control" id="resultText" name="text" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resultFile" class="form-label">Файл (если есть)</label>
+                            <input type="file" class="form-control" id="resultFile" name="file">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальные окна для редактирования результатов -->
+    {% for result in project.results.all %}
+    <div class="modal fade" id="editResultModal{{ result.id }}" tabindex="-1" aria-labelledby="editResultModalLabel{{ result.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_result' result.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editResultModalLabel{{ result.id }}">Редактировать результат</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="resultText{{ result.id }}" class="form-label">Описание результата</label>
+                            <textarea class="form-control" id="resultText{{ result.id }}" name="text" rows="3" required>{{ result.text }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resultFile{{ result.id }}" class="form-label">Файл (если есть)</label>
+                            <input type="file" class="form-control" id="resultFile{{ result.id }}" name="file">
+                            {% if result.file %}
+                            <small class="text-muted">Текущий файл: <a href="{{ result.file.url }}" target="_blank">{{ result.file.name }}</a></small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a href="{% url 'delete_project_result' result.id %}" class="btn btn-danger">Удалить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Модальное окно для добавления риска -->
+    <div class="modal fade" id="addRiskModal" tabindex="-1" aria-labelledby="addRiskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'add_project_risk' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addRiskModalLabel">Добавить риск</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="riskName" class="form-label">Название риска</label>
+                            <input type="text" class="form-control" id="riskName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="riskDescription" class="form-label">Описание</label>
+                            <textarea class="form-control" id="riskDescription" name="description" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальные окна для редактирования рисков -->
+    {% for risk in project.risks.all %}
+    <div class="modal fade" id="editRiskModal{{ risk.id }}" tabindex="-1" aria-labelledby="editRiskModalLabel{{ risk.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_risk' risk.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editRiskModalLabel{{ risk.id }}">Редактировать риск</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="riskName{{ risk.id }}" class="form-label">Название риска</label>
+                            <input type="text" class="form-control" id="riskName{{ risk.id }}" name="name" value="{{ risk.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="riskDescription{{ risk.id }}" class="form-label">Описание</label>
+                            <textarea class="form-control" id="riskDescription{{ risk.id }}" name="description" rows="3" required>{{ risk.description }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a href="{% url 'delete_project_risk' risk.id %}" class="btn btn-danger">Удалить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Модальное окно для добавления участника -->
+    <div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'add_project_member' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addMemberModalLabel">Добавить участника</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="memberUser" class="form-label">Пользователь</label>
+                            <select class="form-select" id="memberUser" name="user" required>
+                                {% for user in available_users %}
+                                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="memberRole" class="form-label">Роль</label>
+                            <select class="form-select" id="memberRole" name="role" required>
+                                {% for value, display in membership_role_choices %}
+                                <option value="{{ value }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальные окна для редактирования участников -->
+    {% for membership in project.projectmembership_set.all %}
+    <div class="modal fade" id="editMemberModal{{ membership.id }}" tabindex="-1" aria-labelledby="editMemberModalLabel{{ membership.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_project_member' membership.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editMemberModalLabel{{ membership.id }}">Редактировать участника</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Пользователь</label>
+                            <p class="form-control-plaintext">{{ membership.user.get_full_name|default:membership.user.username }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="memberRole{{ membership.id }}" class="form-label">Роль</label>
+                            <select class="form-select" id="memberRole{{ membership.id }}" name="role" required>
+                                {% for value, display in membership_role_choices %}
+                                <option value="{{ value }}" {% if membership.role == value %}selected{% endif %}>{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a href="{% url 'delete_project_member' membership.id %}" class="btn btn-danger">Удалить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Модальное окно для добавления бюджета -->
+    <div class="modal fade" id="addBudgetModal" tabindex="-1" aria-labelledby="addBudgetModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'add_project_budget' project.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addBudgetModalLabel">Добавить бюджет</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="budgetYear" class="form-label">Год</label>
+                            <input type="number" class="form-control" id="budgetYear" name="year" min="2000" max="2100" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="budgetAmount" class="form-label">Сумма (руб.)</label>
+                            <input type="number" step="0.01" class="form-control" id="budgetAmount" name="amount" min="0" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <footer class="footer mt-auto">
         <div class="container d-flex justify-content-between align-items-center flex-wrap">
             <div class="p-2">
@@ -176,18 +816,7 @@
             </div>
         </div>
     </footer>
-    <!-- Необязательный JavaScript; выберите один из двух! -->
-
-    <!-- Вариант 1: пакет Bootstrap с Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
-        crossorigin="anonymous"></script>
-
-    <!-- Вариант 2: отдельные JS для Popper и Bootstrap -->
-    <!--
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.min.js" integrity="sha384-Atwg2Pkwv9vp0ygtn1JAojH0nYbwNJLPhwyoVbhoPwBhjQPR5VtM2+xf0Uwh9KtT" crossorigin="anonymous"></script>
-    -->
+        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
 </body>
-
 </html>

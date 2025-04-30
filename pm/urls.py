@@ -22,7 +22,8 @@ from pr.views import projects, project, create_project
 from django.contrib.auth.views import LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
-
+from pr import views
+from main.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/register/', register_view, name='register'),
@@ -35,4 +36,25 @@ urlpatterns = [
     path('project/<uuid:id>/', project, name='project'),
     path('', index, name='index'),
     path('create-project/', create_project, name='create_project'),
+    path('project/<uuid:project_id>/update-name/', views.update_project_name, name='update_project_name'),
+    path('project/<uuid:project_id>/update-basic-info/', views.update_project_basic_info, name='update_project_basic_info'),
+    path('project/<uuid:project_id>/update-dates-budget/', views.update_project_dates_budget, name='update_project_dates_budget'),
+    path('project/<uuid:project_id>/update-description/', views.update_project_description, name='update_project_description'),
+    path('project/<uuid:project_id>/add-task/', views.add_project_task, name='add_project_task'),
+    path('task/<int:task_id>/update/', views.update_project_task, name='update_project_task'),
+    path('task/<int:task_id>/delete/', views.delete_project_task, name='delete_project_task'),
+    path('project/<uuid:project_id>/add-result/', views.add_project_result, name='add_project_result'),
+    path('result/<int:result_id>/update/', views.update_project_result, name='update_project_result'),
+    path('result/<int:result_id>/delete/', views.delete_project_result, name='delete_project_result'),
+    path('project/<uuid:project_id>/add-risk/', views.add_project_risk, name='add_project_risk'),
+    path('risk/<int:risk_id>/update/', views.update_project_risk, name='update_project_risk'),
+    path('risk/<int:risk_id>/delete/', views.delete_project_risk, name='delete_project_risk'),
+    path('project/<uuid:project_id>/add-member/', views.add_project_member, name='add_project_member'),
+    path('membership/<int:membership_id>/update/', views.update_project_member, name='update_project_member'),
+    path('membership/<int:membership_id>/delete/', views.delete_project_member, name='delete_project_member'),
+    path('project/<uuid:project_id>/add-budget/', views.add_project_budget, name='add_project_budget'),
+    path('news/<int:news_id>/', news_detail, name='news_detail'),
+    path('news/create/', news_create, name='news_create'),
+    path('news/<int:news_id>/update/', news_update, name='news_update'),
+    path('news/<int:news_id>/delete/', news_delete, name='news_delete'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
