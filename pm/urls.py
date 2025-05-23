@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from user.views import register_view, login_view, account_view, activate, update_profile
 from main.views import index
 from pr.views import projects, project, create_project
@@ -24,6 +24,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from pr import views
 from main.views import *
+from pm.views import handler404
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/register/', register_view, name='register'),
@@ -57,4 +59,16 @@ urlpatterns = [
     path('news/create/', news_create, name='news_create'),
     path('news/<int:news_id>/update/', news_update, name='news_update'),
     path('news/<int:news_id>/delete/', news_delete, name='news_delete'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# Добавляем обработку статических файлов и debug-toolbar
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Обработка 404 ошибок
+handler404 = handler404

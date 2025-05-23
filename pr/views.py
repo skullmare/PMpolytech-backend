@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .models import Project, ProjectMembership, Task, Result, Risk, Budget
+from .forms import BudgetForm
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import datetime
@@ -28,10 +29,13 @@ def projects(request):
     sort = request.GET.get('sort', '')  # Параметр сортировки
 
     if request.user.is_staff:
-        projects_list = Project.objects.all()
+        projects_list = Project.objects.select_related().prefetch_related('budgets')
     else:
         project_ids = ProjectMembership.objects.filter(user=request.user).values_list('project_id', flat=True)
-        projects_list = Project.objects.filter(id__in=project_ids).distinct()
+        projects_list = Project.objects.filter(id__in=project_ids).select_related().prefetch_related('budgets').distinct()
+
+    # Исключаем завершенные проекты (где end_date <= текущая дата)
+    projects_list = projects_list.exclude(end_date__lte=timezone.now().date())
 
     # Фильтрация по названию проекта и куратору
     if search_query:
@@ -98,18 +102,36 @@ def projects(request):
 
 def project(request, id):
     if request.user.is_authenticated:
-        project = get_object_or_404(Project, id=id)
+        project = get_object_or_404(
+            Project.objects.select_related()
+            .prefetch_related(
+                'budgets',
+                'tasks',
+                'risks',
+                'results',
+                'projectmembership_set__user'
+            ),
+            id=id
+        )
         # Проверяем, является ли пользователь staff или участник проекта
         is_staff = request.user.is_staff
         is_member = ProjectMembership.objects.filter(user=request.user, project=project).exists()
         is_leader = is_project_leader(request.user, project)
 
         if not (is_staff or is_member):
-            # Если пользователь не член проекта и не staff, возвращаем к списку проектов
             messages.error(request, "У вас нет прав для доступа к этому проекту!")
             return redirect('projects')
 
-        # Получаем список пользователей, которые еще не являются участниками проекта
+        # Получаем статистику по задачам
+        tasks_by_status = project.get_tasks_by_status()
+        task_stats = {
+            'pending': 0,
+            'in_progress': 0,
+            'completed': 0
+        }
+        for status in tasks_by_status:
+            task_stats[status['status']] = status['count']
+
         available_users = User.objects.exclude(projectmembership__project=project)
 
         return render(request, 'pr/project.html', {
@@ -117,7 +139,8 @@ def project(request, id):
             'task_status_choices': Task.Status.choices,
             'membership_role_choices': ProjectMembership.ROLE_CHOICES,
             'available_users': available_users,
-            'is_leader': is_leader
+            'is_leader': is_leader,
+            'task_stats': task_stats
         })
     messages.error(request, "Авторизуйтесь!")
     return redirect('login')
@@ -136,7 +159,7 @@ def create_project(request):
             # Назначаем текущего пользователя руководителем проекта
             ProjectMembership.objects.create(user=request.user, project=project, role='leader')
             messages.success(request, "Проект успешно создан!")
-            return redirect('projects')
+            return redirect(project.get_absolute_url())
         else:
             messages.error(request, "Заполните все поля!")
     
@@ -210,56 +233,86 @@ def add_project_task(request, project_id):
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         description = request.POST.get('description', '')
-        if name and status and start_date and end_date:
-            try:
-                task = Task(
-                    project=project,
-                    name=name,
-                    status=status,
-                    start_date=start_date,
-                    end_date=end_date,
-                    description=description
-                )
-                task.full_clean()
-                task.save()
-                messages.success(request, 'Задача успешно добавлена.')
-            except ValidationError as e:
-                messages.error(request, f'Ошибка: {e.message_dict}')
-        else:
+        
+        if not all([name, status, start_date, end_date]):
             messages.error(request, 'Все поля обязательны для заполнения.')
+            return redirect('project', id=project_id)
+            
+        # Проверка дат
+        if start_date > end_date:
+            messages.error(request, 'Дата начала задачи не может быть позже даты окончания.')
+            return redirect('project', id=project_id)
+            
+        if project.end_date and end_date > project.end_date:
+            messages.error(request, 'Дата окончания задачи не может быть позже даты окончания проекта.')
+            return redirect('project', id=project_id)
+            
+        try:
+            task = Task(
+                project=project,
+                name=name,
+                status=status,
+                start_date=start_date,
+                end_date=end_date,
+                description=description
+            )
+            task.save()
+            messages.success(request, 'Задача успешно добавлена.')
+        except Exception as e:
+            messages.error(request, f'Ошибка при создании задачи: {str(e)}')
+            
     return redirect('project', id=project_id)
 
 @login_required
 def update_project_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
-    if not is_project_leader(request.user, task.project):
+    task = get_object_or_404(
+        Task.objects.select_related('project')
+        .prefetch_related('assignees', 'taskassignee_set__user'),
+        id=task_id
+    )
+    project = task.project
+    if not is_project_leader(request.user, project):
         messages.error(request, "Только руководитель проекта может редактировать задачи!")
-        return redirect('project', id=task.project.id)
+        return redirect('project', id=project.id)
     if request.method == 'POST':
         name = request.POST.get('name')
         status = request.POST.get('status')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         description = request.POST.get('description', '')
-        if name and status and start_date and end_date:
-            try:
-                task.name = name
-                task.status = status
-                task.start_date = start_date
-                task.end_date = end_date
-                task.description = description
-                task.full_clean()
-                task.save()
-                messages.success(request, 'Задача успешно обновлена.')
-            except ValidationError as e:
-                messages.error(request, f'Ошибка: {e.message_dict}')
-        else:
+        
+        if not all([name, status, start_date, end_date]):
             messages.error(request, 'Все поля обязательны для заполнения.')
-    return redirect('project', id=task.project.id)
+            return redirect('project', id=project.id)
+            
+        # Проверка дат
+        if start_date > end_date:
+            messages.error(request, 'Дата начала задачи не может быть позже даты окончания.')
+            return redirect('project', id=project.id)
+            
+        if project.end_date and end_date > project.end_date:
+            messages.error(request, 'Дата окончания задачи не может быть позже даты окончания проекта.')
+            return redirect('project', id=project.id)
+            
+        try:
+            task.name = name
+            task.status = status
+            task.start_date = start_date
+            task.end_date = end_date
+            task.description = description
+            task.save()
+            messages.success(request, 'Задача успешно обновлена.')
+        except Exception as e:
+            messages.error(request, f'Ошибка при обновлении задачи: {str(e)}')
+            
+    return redirect('project', id=project.id)
 
 @login_required
 def delete_project_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(
+        Task.objects.select_related('project'),
+        id=task_id
+    )
     project_id = task.project.id
     if not is_project_leader(request.user, task.project):
         messages.error(request, "Только руководитель проекта может удалять задачи!")
@@ -293,7 +346,10 @@ def add_project_result(request, project_id):
 
 @login_required
 def update_project_result(request, result_id):
-    result = get_object_or_404(Result, id=result_id)
+    result = get_object_or_404(
+        Result.objects.select_related('project'),
+        id=result_id
+    )
     if not is_project_leader(request.user, result.project):
         messages.error(request, "Только руководитель проекта может редактировать результаты!")
         return redirect('project', id=result.project.id)
@@ -312,7 +368,10 @@ def update_project_result(request, result_id):
 
 @login_required
 def delete_project_result(request, result_id):
-    result = get_object_or_404(Result, id=result_id)
+    result = get_object_or_404(
+        Result.objects.select_related('project'),
+        id=result_id
+    )
     project_id = result.project.id
     if not is_project_leader(request.user, result.project):
         messages.error(request, "Только руководитель проекта может удалять результаты!")
@@ -344,7 +403,10 @@ def add_project_risk(request, project_id):
 
 @login_required
 def update_project_risk(request, risk_id):
-    risk = get_object_or_404(Risk, id=risk_id)
+    risk = get_object_or_404(
+        Risk.objects.select_related('project'),
+        id=risk_id
+    )
     if not is_project_leader(request.user, risk.project):
         messages.error(request, "Только руководитель проекта может редактировать риски!")
         return redirect('project', id=risk.project.id)
@@ -362,7 +424,10 @@ def update_project_risk(request, risk_id):
 
 @login_required
 def delete_project_risk(request, risk_id):
-    risk = get_object_or_404(Risk, id=risk_id)
+    risk = get_object_or_404(
+        Risk.objects.select_related('project'),
+        id=risk_id
+    )
     project_id = risk.project.id
     if not is_project_leader(request.user, risk.project):
         messages.error(request, "Только руководитель проекта может удалять риски!")
@@ -397,7 +462,10 @@ def add_project_member(request, project_id):
 
 @login_required
 def update_project_member(request, membership_id):
-    membership = get_object_or_404(ProjectMembership, id=membership_id)
+    membership = get_object_or_404(
+        ProjectMembership.objects.select_related('project', 'user'),
+        id=membership_id
+    )
     if not is_project_leader(request.user, membership.project):
         messages.error(request, "Только руководитель проекта может редактировать роли участников!")
         return redirect('project', id=membership.project.id)
@@ -413,7 +481,10 @@ def update_project_member(request, membership_id):
 
 @login_required
 def delete_project_member(request, membership_id):
-    membership = get_object_or_404(ProjectMembership, id=membership_id)
+    membership = get_object_or_404(
+        ProjectMembership.objects.select_related('project'),
+        id=membership_id
+    )
     project_id = membership.project.id
     if not is_project_leader(request.user, membership.project):
         messages.error(request, "Только руководитель проекта может удалять участников!")
@@ -429,21 +500,24 @@ def add_project_budget(request, project_id):
     if not is_project_leader(request.user, project):
         messages.error(request, "Только руководитель проекта может добавлять бюджет!")
         return redirect('project', id=project_id)
+    
     if request.method == 'POST':
-        year = request.POST.get('year')
-        amount = request.POST.get('amount')
-        if year and amount:
+        form = BudgetForm(request.POST)
+        if form.is_valid():
             try:
-                Budget.objects.create(
-                    project=project,
-                    year=year,
-                    amount=amount
-                )
+                budget = form.save(commit=False)  # Создаем объект, но не сохраняем в БД
+                budget.project = project  # Устанавливаем проект
+                budget.save()  # Сохраняем без параметра commit
                 messages.success(request, 'Бюджет успешно добавлен.')
+            except ValidationError as e:
+                if hasattr(e, 'message_dict') and 'year' in e.message_dict:
+                    messages.error(request, e.message_dict['year'][0])
+                else:
+                    messages.error(request, str(e))
             except IntegrityError:
                 messages.error(request, 'Бюджет для этого года уже существует.')
-            except ValueError:
-                messages.error(request, 'Некорректные данные для года или суммы.')
         else:
-            messages.error(request, 'Все поля обязательны для заполнения.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{form.fields[field].label}: {error}')
     return redirect('project', id=project_id)

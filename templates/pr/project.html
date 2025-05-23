@@ -70,9 +70,8 @@
                     <li class="breadcrumb-item">
                         <a href="/projects/" class="text-decoration-none text-secondary">Проекты</a>
                     </li>
-                    <li class="breadcrumb-item active text-truncate"  style="max-width: 180px;" aria-current="page">
-                        {{ project.name }}
-                        
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ project.name|truncatechars:10 }}
                     </li>
                     {% if is_leader %}
                         <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editProjectNameModal">
@@ -316,6 +315,35 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Статистика задач</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="alert alert-warning">
+                                            <h6>Ожидающие</h6>
+                                            <p class="mb-0">{{ task_stats.pending }} задач</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="alert alert-info">
+                                            <h6>В процессе</h6>
+                                            <p class="mb-0">{{ task_stats.in_progress }} задач</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="alert alert-success">
+                                            <h6>Завершенные</h6>
+                                            <p class="mb-0">{{ task_stats.completed }} задач</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
     
@@ -355,6 +383,8 @@
                 </div>
             </div>
         </div>
+
+
     </div>
     
     <!-- Модальные окна для редактирования (доступны только руководителю) -->
@@ -782,12 +812,12 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="budgetYear" class="form-label">Год</label>
-                            <input type="number" class="form-control" id="budgetYear" name="year" min="2000" max="2100" required>
+                            <label for="id_year" class="form-label">Год</label>
+                            <input type="number" class="form-control" id="id_year" name="year" min="2000" max="2100" required>
                         </div>
                         <div class="mb-3">
-                            <label for="budgetAmount" class="form-label">Сумма (руб.)</label>
-                            <input type="number" step="0.01" class="form-control" id="budgetAmount" name="amount" min="0" required>
+                            <label for="id_amount" class="form-label">Сумма (руб.)</label>
+                            <input type="number" step="0.01" class="form-control" id="id_amount" name="amount" min="0" required>
                         </div>
                     </div>
                     <div class="modal-footer">
